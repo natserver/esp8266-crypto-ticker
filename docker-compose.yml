@@ -1,0 +1,37 @@
+services:
+  crypto-dash:
+    build:
+      context: .
+      args:
+        # 路由器上如果已有 node 镜像，可以在 .env 里指定它，避免联网拉取
+        BASE_IMAGE: ${BASE_IMAGE:-node:22-alpine}
+    image: crypto-dash:1.0.0
+    container_name: crypto-dash
+    restart: unless-stopped
+    # 用 host 网络：沿用路由器自己的 DNS 和代理通道。
+    # 本机 docker 给 bridge 容器下发 8.8.8.8 做 DNS，会被拦掉，容器里解析不了币安域名。
+    network_mode: host
+    # 想用 bridge 就注释掉上面那行，改用下面一行，并指定 DNS：
+    # ports: ["${PORT:-8080}:${PORT:-8080}"]
+    # dns: ["192.168.100.2"]
+    environment:
+      TZ: Asia/Shanghai
+      PORT: "${PORT:-8080}"
+      SITE_NAME: CryptoDash
+      # 要显示的币种，用逗号分隔，写成 BTCUSDT 这种交易对
+      SYMBOLS: "BTCUSDT,ETHUSDT,ETCUSDT"
+      # 想顺便显示 A 股就填，格式 sh600519 / sz000001，留空则不显示
+      STOCKS: ""
+      # 行情源优先级。第一位是币安 U 本位合约价，第二位是 OKX 永续
+      PROVIDERS: "binancefutures,okxswap,binance,okx,gate,mexc,coingecko"
+      # 抓取间隔(毫秒)，别设太小，容易被限频
+      REFRESH_MS: "15000"
+      # 单次上游超时(毫秒)
+      UPSTREAM_TIMEOUT_MS: "6000"
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>盒子屏预览 240x240</title>
+<style>
+  html,body { margin:0; height:100%; background:#eef0f3;
+              font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { min-height:100%; display:flex; align-items:center; justify-content:center; gap:36px; padding:24px; flex-wrap:wrap; }
+  .stage { width:480px; height:480px; position:relative; }
+  /* 屏幕本体：模拟 1.28/1.54 寸 IPS，深底亮字 */
+  #screen {
+    width:240px; height:240px; background:#05070c; border-radius:18px; overflow:hidden;
+    box-shadow:0 12px 32px rgba(15,23,42,.28), inset 0 0 0 2px #111827;
+    color:#e8eef8; position:relative;
+    transform:scale(2); transform-origin:top left;
+  }
+  .topbar { height:30px; display:flex; align-items:center; justify-content:space-between;
+            padding:8px 12px 0; font-size:14px; letter-spacing:.5px; color:#cfd8e6; }
+  .wifi { display:flex; align-items:flex-end; gap:2px; height:12px; }
+  .wifi i { display:block; width:3px; background:#7dd3fc; border-radius:1px; }
+  .wifi i:nth-child(1) { height:4px; } .wifi i:nth-child(2) { height:7px; }
+  .wifi i:nth-child(3) { height:10px; } .wifi i:nth-child(4) { height:12px; }
+  .rows { padding:6px 10px 0; }
+  .row { padding:6px 2px; border-bottom:1px solid #1a2231; }
+  .row:last-child { border-bottom:none; }
+  .r1 { display:flex; align-items:baseline; justify-content:space-between; }
+  .sym { font-size:13px; color:#f1f5f9; letter-spacing:.4px; }
+  .chg { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .r2 { display:flex; align-items:baseline; justify-content:space-between; margin-top:1px; }
+  .price { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .sub { font-size:11px; color:#8b98ab; font-variant-numeric:tabular-nums; }
+  .up { color:#ff5c5c; } .down { color:#31d07a; } .flat { color:#8b98ab; }
+  .foot { position:absolute; left:0; right:0; bottom:5px; text-align:center; font-size:9px; color:#4b5768; }
+  .note { max-width:300px; font-size:13px; color:#4b5563; line-height:1.8; }
+  .note h2 { font-size:15px; margin:0 0 8px; color:#1f2328; }
+  .note code { background:#e2e5ea; padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage"><div id="screen">
+    <div class="topbar">
+      <span id="time">--:--:--</span>
+      <span class="wifi"><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="rows" id="rows"><div class="row flat">loading…</div></div>
+    <div class="foot" id="foot">crypto-dash</div>
+  </div></div>
+
+  <div class="note">
+    <h2>这是屏幕内容预览</h2>
+    尺寸按 240×240（放大 2 倍显示）。数据来自 <code>/api/device</code>，每 5 秒刷新一次。<br>
+    你盒子固件如果按同样的字段画屏，效果就是这样：第一行 <code>币种对 + 涨跌幅</code>，第二行 <code>价格 + 涨跌额</code>。<br>
+    涨用红、跌用绿（A 股习惯）。
+  </div>
+</div>
+
+<script>
+const fmt = (n) => {
+  if (n === null || n === undefined || isNaN(n)) return '-';
+  if (n >= 10000) return n.toFixed(1);
+  if (n >= 1) return n.toFixed(2);
+  if (n >= 0.01) return n.toFixed(4);
+  return n.toFixed(6);
+};
+
+async function tick() {
+  try {
+    const d = await fetch('/api/device').then(r => r.json());
+    document.getElementById('time').textContent = d.time || '--:--:--';
+    const list = (d.items || []).slice(0, 3);
+    document.getElementById('rows').innerHTML = list.map(it => {
+      const cls = it.up === null ? 'flat' : (it.up ? 'up' : 'down');
+      const abs = (it.change === null || it.change === undefined)
+        ? '-'
+        : (it.change >= 0 ? '+' : '') + fmt(it.price * it.change / 100);
+      return `<div class="row">
+        <div class="r1"><span class="sym">${it.label}</span><span class="chg ${cls}">${it.changeText}</span></div>
+        <div class="r2"><span class="price ${cls}">${it.priceText}</span><span class="sub">${abs}</span></div>
+      </div>`;
+    }).join('') || '<div class="row flat">无数据</div>';
+    document.getElementById('foot').textContent = d.source
+      ? (d.source + (d.market === 'futures' ? ' · 永续合约' : ' · 现货'))
+      : 'crypto-dash';
+  } catch (e) {
+    document.getElementById('foot').textContent = 'offline';
+  }
+}
+tick();
+setInterval(tick, 5000);
+</script>
+</body>
+</html>

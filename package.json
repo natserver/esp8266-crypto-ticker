@@ -1,0 +1,13 @@
+{
+  "name": "crypto-dash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "给桌面小盒子(ESP32)用的行情数据服务，跑在路由器 Docker 里",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

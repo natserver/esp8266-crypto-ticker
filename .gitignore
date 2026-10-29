@@ -1,0 +1,20 @@
+# 运行时数据：用户自己的配置、日志（里面可能有家里的 WiFi 信息，别提交）
+data/
+.env
+
+# 依赖
+node_modules/
+
+# 固件：只收最终版源码，其余（老版本、编译产物、扫描日志）不进仓库
+firmware/*
+!firmware/final14/
+!firmware/tools/
+!firmware/FLASH.md
+*.bin
+*.elf
+*.map
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+*.log
